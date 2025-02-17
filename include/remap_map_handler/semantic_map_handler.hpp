@@ -49,7 +49,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
-#include "remap_plugin_base/regions_register.hpp"
+#include "remap_regions_register/regions_register.hpp"
 
 namespace remap
 {
@@ -84,7 +84,7 @@ private:
     const GridAccessorType & accessor,
     const openvdb::Coord & ijk,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register)
+    remap::regions_register::RegionsRegister & reg_register)
   {
     int id;
     if (!accessor.isValueOn(ijk)) {
@@ -117,7 +117,7 @@ private:
     const int & idx_j,
     const int & idx_k,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register)
+    remap::regions_register::RegionsRegister & reg_register)
   {
     openvdb::Coord ijk(idx_i, idx_j, idx_k);
     int id = getAreaId(
@@ -137,7 +137,7 @@ private:
     const openvdb::Coord & ijk_min,
     const openvdb::Coord & ijk_max,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register)
+    remap::regions_register::RegionsRegister & reg_register)
   {
     GridAccessorType accessor(tree);
 
@@ -162,7 +162,7 @@ private:
     const float & radius,
     const openvdb::Vec3d & centre,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register)
+    remap::regions_register::RegionsRegister & reg_register)
   {
     GridAccessorType accessor(tree);
 
@@ -193,7 +193,7 @@ private:
     const openvdb::Vec3d & idx_space_origin,
     const openvdb::math::Quatd & rotation_quat,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register)
+    remap::regions_register::RegionsRegister & reg_register)
   {
     GridAccessorType accessor(tree);
 
@@ -236,7 +236,7 @@ private:
     const openvdb::Vec3d & idx_space_origin,
     const openvdb::math::Quatd & rotation_quat,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register)
+    remap::regions_register::RegionsRegister & reg_register)
   {
     GridAccessorType accessor(tree);
 
@@ -360,7 +360,7 @@ public:
   void insertSemanticSphere(
     const float & radius,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register,
+    remap::regions_register::RegionsRegister & reg_register,
     const openvdb::Vec3d & centre = openvdb::Vec3d(0.0, 0.0, 0.0))
   {
     if (radius <= 0.0) {
@@ -405,7 +405,7 @@ public:
   void insertSemanticPoints(
     std::vector<pcl::PointXYZ> points,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register)
+    remap::regions_register::RegionsRegister & reg_register)
   {
     if (points.size() == 0) {
       return;
@@ -437,7 +437,7 @@ public:
     const float & amplitude_v,
     const float & length,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register,
+    remap::regions_register::RegionsRegister & reg_register,
     const openvdb::Vec3d & centre = openvdb::Vec3d(0.0, 0.0, 0.0)
   )
   {
@@ -491,7 +491,7 @@ public:
     const float & length,
     const openvdb::Vec3d & direction,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register,
+    remap::regions_register::RegionsRegister & reg_register,
     const openvdb::Vec3d & origin = openvdb::Vec3d(0.0, 0.0, 0.0)
   )
   {
@@ -544,7 +544,7 @@ public:
     const float & length,
     const openvdb::Vec3d & direction,
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register,
+    remap::regions_register::RegionsRegister & reg_register,
     const openvdb::Vec3d & origin = openvdb::Vec3d(0.0, 0.0, 0.0))
   {
     if (length <= 0.0) {
@@ -595,7 +595,7 @@ public:
 
   bool removeRegion(
     const std::string & reg,
-    remap::plugins::RegionsRegister & reg_register)
+    remap::regions_register::RegionsRegister & reg_register)
   {
     using ValueIter = typename openvdb::Int32Grid::ValueOnIter;
 
