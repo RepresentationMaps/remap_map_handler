@@ -15,6 +15,7 @@ ament_auto_find_build_dependencies()
 
 ament_auto_add_library(${PROJECT_NAME}_lib
   src/remap_map_handler/frustum_fov.cpp
+  src/remap_map_handler/semantic_map_handler.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_lib
