@@ -43,8 +43,6 @@
 #include <string>
 #include <memory>
 
-#include <opencv2/imgproc/imgproc.hpp>
-
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
