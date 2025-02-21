@@ -194,10 +194,10 @@ public:
 
   void clear();
 
-  void setFixedFrame(const std::string fixed_frame);  // TODO (@lorenzoferrini)
-  void setMapFrame(const std::string map_frame);  // TODO (@lorenzoferrini)
-  void rotateMap();  // TODO (@lorenzoferrini)
-  void flushFoV();  // TODO (@lorenzoferrini)
+  void setFixedFrame(const std::string fixed_frame);  // TODO(lorenzoferrini) implement
+  void setMapFrame(const std::string map_frame);  // TODO(lorenzoferrini) implement
+  void rotateMap();  // TODO(lorenzoferrini) implement
+  void flushFoV();  // TODO(lorenzoferrini) implement
 
   std::shared_ptr<openvdb::Int32Grid> getGridPtr();
 };
