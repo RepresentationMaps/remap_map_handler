@@ -24,7 +24,8 @@ SemanticMapHandler::SemanticMapHandler(
   const bool & vertex_centered)
 : threaded_(threaded),
   voxel_size_(voxel_size),
-  vertex_centered_(vertex_centered)
+  vertex_centered_(vertex_centered),
+  fixed_frame_("map")
 {
   grid_ = openvdb::Int32Grid::create();
 
@@ -48,7 +49,8 @@ SemanticMapHandler::SemanticMapHandler(
 : grid_(grid),
   threaded_(threaded),
   voxel_size_(voxel_size),
-  vertex_centered_(vertex_centered)
+  vertex_centered_(vertex_centered),
+  fixed_frame_("map")
 {
   if (vertex_centered) {
     offset_ = openvdb::math::Vec3d(0.0, 0.0, 0.0);
@@ -528,6 +530,32 @@ void SemanticMapHandler::insertSemanticPyramid(
   }
 }
 
+void SemanticMapHandler::insertVoxel(
+  const float & x,
+  const float & y,
+  const float & z,
+  const std::string & reg,
+  remap::regions_register::RegionsRegister & reg_register)
+{
+  openvdb::Vec3d point(x, y, z);
+  openvdb::Vec3d grid_coords_tc = grid_->worldToIndex(point);
+  openvdb::Coord grid_coords(
+    static_cast<int>(grid_coords_tc[0]),
+    static_cast<int>(grid_coords_tc[1]),
+    static_cast<int>(grid_coords_tc[2]));
+
+  openvdb::Int32Tree & tree = grid_->tree();
+  GridAccessorType accessor(tree);
+
+  setVoxelId(
+    accessor,
+    grid_coords[0],
+    grid_coords[1],
+    grid_coords[2],
+    reg,
+    reg_register);
+}
+
 bool SemanticMapHandler::removeRegion(
   const std::string & reg,
   remap::regions_register::RegionsRegister & reg_register)
@@ -587,6 +615,11 @@ void SemanticMapHandler::clear()
 std::shared_ptr<openvdb::Int32Grid> SemanticMapHandler::getGridPtr()
 {
   return grid_;
+}
+
+std::string SemanticMapHandler::getFixedFrame() const
+{
+  return fixed_frame_;
 }
 
 }  // namespace map_handler
