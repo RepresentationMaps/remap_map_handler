@@ -188,6 +188,13 @@ public:
     remap::regions_register::RegionsRegister & reg_register,
     const openvdb::Vec3d & origin = openvdb::Vec3d(0.0, 0.0, 0.0));
 
+  void insertVoxel(
+    const float & x,
+    const float & y,
+    const float & z,
+    const std::string & reg,
+    remap::regions_register::RegionsRegister & reg_register);
+
   bool removeRegion(
     const std::string & reg,
     remap::regions_register::RegionsRegister & reg_register);
@@ -195,6 +202,7 @@ public:
   void clear();
 
   void setFixedFrame(const std::string fixed_frame);  // TODO(lorenzoferrini) implement
+  std::string getFixedFrame() const;
   void setMapFrame(const std::string map_frame);  // TODO(lorenzoferrini) implement
   void rotateMap();  // TODO(lorenzoferrini) implement
   void flushFoV();  // TODO(lorenzoferrini) implement
