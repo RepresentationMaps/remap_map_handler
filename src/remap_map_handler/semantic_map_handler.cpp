@@ -671,7 +671,7 @@ bool SemanticMapHandler::isInside(
   const openvdb::CoordBBox & bbox1,
   const openvdb::CoordBBox & bbox2)
 {
-  return bbox2.isInside(bbox1);
+  return bbox1.isInside(bbox2);
 }
 
 bool SemanticMapHandler::higherThan(
@@ -688,8 +688,8 @@ bool SemanticMapHandler::higherThan(
   {
     return false;
   }
-  float intersection_length = bbox2.max()[2] - bbox1.min()[2];
-  float bbox1_z_length = bbox1.max()[2] - bbox1.min()[2];
+  float intersection_length = bbox2.max()[2] - bbox1.min()[2] + 1;
+  float bbox1_z_length = bbox1.max()[2] - bbox1.min()[2] + 1;
   return (intersection_length/bbox1_z_length) > above_thresh;
 }
 
@@ -712,16 +712,17 @@ std::string SemanticMapHandler::computeSymbolicRelationship(
     return "aboveTouching";
   } else if (higherThan(bbox1, bbox2, above_thresh) && verticallyAligned(bbox1, bbox2, min_iou)) {
     return "above";
-  } else if (intersect(bbox1, bbox2)) {
-    return "intersect";
   } else if (isInside(bbox1, bbox2)) {
     return "inside";
+  } else if (intersect(bbox1, bbox2)) {
+    return "intersect";
   } else {
     return "disjoint";
   }
 }
 
-void SemanticMapHandler::processRelationships()
+void SemanticMapHandler::processRelationships(
+  const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register)
 {
   if (areas_bbox_.size() == 0){
     return;
@@ -731,7 +732,19 @@ void SemanticMapHandler::processRelationships()
     std::cout<<"Computing bbox\n";
     for (auto n_it = std::next(bboxes_it); n_it != areas_bbox_.end(); n_it++) {
       std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
-      std::cout << "Region " << bboxes_it->first << " " << relationship << " Region " << n_it->first << std::endl;
+      std::string region_1_entities = "[";
+      std::string region_2_entities = "[";
+      for (auto reg : reg_register->findRegionsById(bboxes_it->first)){
+        region_1_entities += reg + " ";
+      }
+      for (auto reg : reg_register->findRegionsById(n_it->first)){
+        region_2_entities += reg + " ";
+      }
+      region_1_entities += "]";
+      region_2_entities += "]";
+      std::cout << "Region " << region_1_entities << " " << relationship << " Region " << region_2_entities << std::endl;
+      std::cout<<"Region 1: "<<bboxes_it->second<<std::endl;
+      std::cout<<"Region 2: "<<n_it->second<<std::endl;
     }
   }
 }

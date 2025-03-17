@@ -247,7 +247,7 @@ public:
 
   void clear();
 
-  void processRelationships();
+  void processRelationships(const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register);
 
   void setFixedFrame(const std::string fixed_frame);  // TODO(lorenzoferrini) implement
   std::string getFixedFrame() const;
