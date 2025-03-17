@@ -57,6 +57,8 @@ class SemanticMapHandler
 {
 private:
   std::shared_ptr<openvdb::Int32Grid> grid_;
+  std::map<int, openvdb::CoordBBox> areas_bbox_;
+  std::map<int, std::map<int, std::string>> relationships_matrix_;
 
   bool threaded_;
 
@@ -77,6 +79,13 @@ private:
         a[0] - b[0],
         2) + std::pow(a[1] - b[1], 2) + std::pow(a[2] - b[2], 2));
   }
+
+  void updateAreaBBox(
+    const int & regId,
+    const openvdb::Coord & ijk);
+
+  void deleteRegionBBox(
+    const int & regId);
 
   int getAreaId(
     const GridAccessorType & accessor,
@@ -137,6 +146,43 @@ private:
     tbb::enumerable_thread_specific<openvdb::Int32Tree> & tbb_thread_pool,
     const tbb::blocked_range<int> & tbb_iteration_range,
     std::function<void(const tbb::blocked_range<int> &)> kernel);
+
+  // Finds whether two bboxes are vertically aligned,
+  // that is, we check whether the XY projection
+  // of the bboxes intersects at least for an area
+  // of min_overlapping
+  bool verticallyAligned(
+    const openvdb::CoordBBox & bbox1,
+    const openvdb::CoordBBox & bbox2,
+    const float & min_iou = 0.1);
+
+  // Finds whether two bboxes intersect
+  bool intersect(
+    openvdb::CoordBBox bbox1,
+    const openvdb::CoordBBox & bbox2);
+
+  bool isInside(
+    const openvdb::CoordBBox & bbox1,
+    const openvdb::CoordBBox & bbox2);
+
+  // Finds whether two bboxes are one
+  // above the other
+  bool higherThan(
+    const openvdb::CoordBBox & bbox1,
+    const openvdb::CoordBBox & bbox2,
+    const float & above_thresh = 0.1);
+
+  bool aboveTouching(
+    const openvdb::CoordBBox & bbox1,
+    const openvdb::CoordBBox & bbox2,
+    const float & min_iou = 0.1,
+    const float & above_thresh = 0.1);
+
+  std::string computeSymbolicRelationship(
+    const openvdb::CoordBBox & bbox1,
+    const openvdb::CoordBBox & bbox2,
+    const float & min_iou = 0.1,
+    const float & above_thresh = 0.1);
 
 public:
   SemanticMapHandler(
@@ -200,6 +246,8 @@ public:
     remap::regions_register::RegionsRegister & reg_register);
 
   void clear();
+
+  void processRelationships();
 
   void setFixedFrame(const std::string fixed_frame);  // TODO(lorenzoferrini) implement
   std::string getFixedFrame() const;
