@@ -68,6 +68,24 @@ SemanticMapHandler::~SemanticMapHandler()
   grid_.reset();
 }
 
+void SemanticMapHandler::updateAreaBBox(
+  const int & regId,
+  const openvdb::Coord & ijk)
+{
+  if (areas_bbox_.find(regId) == areas_bbox_.end()) {
+    areas_bbox_[regId] = openvdb::CoordBBox(ijk, ijk);
+  } else {
+    areas_bbox_[regId].expand(ijk);
+  }
+}
+
+void SemanticMapHandler::deleteRegionBBox(const int & regId)
+{
+  if (areas_bbox_.find(regId) != areas_bbox_.end()) {
+    areas_bbox_.erase(regId);
+  }
+}
+
 int SemanticMapHandler::getAreaId(
   const GridAccessorType & accessor,
   const openvdb::Coord & ijk,
@@ -117,6 +135,7 @@ void SemanticMapHandler::setVoxelId(
     return;
   }
   accessor.setValue(ijk, id);
+  updateAreaBBox(id, ijk);
 }
 
 void SemanticMapHandler::boxSemanticCore(
@@ -570,39 +589,151 @@ bool SemanticMapHandler::removeRegion(
     return false;
   }
 
-  struct IdUpdater
-  {
+  struct IdUpdater {
     int reg_id_;
     std::map<int, int> ids_to_update_;
+    std::map<int, openvdb::CoordBBox> & bbox_;
+    SemanticMapHandler & map_handler_;
     IdUpdater(
-      const int & reg_id,
-      const std::map<int, int> & ids_to_udpate)
-    : reg_id_(reg_id), ids_to_update_(ids_to_udpate) {}
-    inline void operator()(const ValueIter & iter) const
-    {
-      if (!iter.isVoxelValue()) {
+      const int & reg_id, 
+      const std::map<int, int> & ids_to_udpate,
+      std::map<int, openvdb::CoordBBox> & bbox,
+      SemanticMapHandler & map_handler):
+    reg_id_(reg_id),
+    ids_to_update_(ids_to_udpate),
+    bbox_(bbox),
+    map_handler_(map_handler) {}
+    inline void operator()(const ValueIter& iter) const {
+      if (!iter.isVoxelValue())
         return;
-      }
-      if (*iter == reg_id_) {
+      if (*iter == reg_id_){
         iter.setValueOff();
+        bbox_.erase(*iter);
         return;
       }
       auto ids_it = ids_to_update_.find(*iter);
-      if (ids_it == ids_to_update_.end()) {
+      if (ids_it == ids_to_update_.end()){
         return;
       }
+      bbox_.erase(*iter);
       iter.setValue(ids_it->second);
+      map_handler_.updateAreaBBox(ids_it->second, iter.getCoord());
     }
   };
-  // As we are directly modifying the topology
-  // of the tree associated with the grid,
-  // it is not possible to have a multithreaded
-  // foreach
-  openvdb::tools::foreach(
-    grid_->beginValueOn(),
-    IdUpdater(reg_id, ids_to_udpate), false);
+// As we are directly modifying the topology
+// of the tree associated with the grid,
+// it is not possible to have a multithreaded
+// foreach
+openvdb::tools::foreach(grid_->beginValueOn(),
+      IdUpdater(reg_id, ids_to_udpate, areas_bbox_, *this), false);
+return true;
+}
 
-  return true;
+bool SemanticMapHandler::verticallyAligned(
+      const openvdb::CoordBBox & bbox1,
+      const openvdb::CoordBBox & bbox2,
+      const float & min_iou)
+{
+  // We check whether the XY projection of the bboxes
+  // intersects. The general condition to understand if
+  // two bounding boxes intersect, is that they both
+  // intersect along the x and y axis.
+  auto x_a = std::min(bbox1.min()[0], bbox2.min()[0]);
+  auto x_b = (x_a == bbox1.min()[0]) ? bbox1.max()[0] : bbox2.max()[0];
+  auto x_c = std::max(bbox1.min()[0], bbox2.min()[0]);
+  bool x_intersection = x_b > x_c;
+
+  auto y_a = std::min(bbox1.min()[1], bbox2.min()[1]);
+  auto y_b = (y_a == bbox1.min()[1]) ? bbox1.max()[1] : bbox2.max()[1];
+  auto y_c = std::max(bbox1.min()[1], bbox2.min()[1]);
+  bool y_intersection = y_b > y_c;
+
+  auto bbox1_area = (bbox1.max()[0]-bbox1.min()[0])*(bbox1.max()[1]-bbox1.min()[1]);
+  auto bbox2_area = (bbox2.max()[0]-bbox2.min()[0])*(bbox2.max()[1]-bbox2.min()[1]);
+
+  float intersection_area = (x_b-x_c)*(y_b-y_c);
+  float union_area = bbox1_area+bbox2_area-intersection_area;
+
+  float iou = intersection_area/union_area;
+
+  return x_intersection && y_intersection && (iou > min_iou);
+}
+
+bool SemanticMapHandler::intersect(
+  openvdb::CoordBBox bbox1,
+  const openvdb::CoordBBox & bbox2)
+{
+  bbox1.intersect(bbox2);
+  return bbox1.hasVolume();
+}
+
+bool SemanticMapHandler::isInside(
+  const openvdb::CoordBBox & bbox1,
+  const openvdb::CoordBBox & bbox2)
+{
+  return bbox2.isInside(bbox1);
+}
+
+bool SemanticMapHandler::higherThan(
+  const openvdb::CoordBBox & bbox1,
+  const openvdb::CoordBBox & bbox2,
+  const float & above_thresh)
+{
+  // We are computing whether bbox1 is above bbox2
+  if ((bbox1.max()[2] > bbox2.max()[2]) && (bbox1.min()[2] > bbox2.max()[2]))
+  {
+    return true;
+  }
+  if ((bbox1.max()[2] < bbox2.max()[2]) || (bbox1.min()[2] < bbox2.min()[2]))
+  {
+    return false;
+  }
+  float intersection_length = bbox2.max()[2] - bbox1.min()[2];
+  float bbox1_z_length = bbox1.max()[2] - bbox1.min()[2];
+  return (intersection_length/bbox1_z_length) > above_thresh;
+}
+
+bool SemanticMapHandler::aboveTouching(
+  const openvdb::CoordBBox & bbox1,
+  const openvdb::CoordBBox & bbox2,
+  const float & min_iou,
+  const float & above_thresh)
+{
+  return higherThan(bbox1, bbox2, above_thresh) && verticallyAligned(bbox1, bbox2, above_thresh) && (intersect(bbox1, bbox2) || (bbox1.min()[2] == bbox2.max()[2]));
+}
+
+std::string SemanticMapHandler::computeSymbolicRelationship(
+  const openvdb::CoordBBox & bbox1,
+  const openvdb::CoordBBox & bbox2,
+  const float & min_iou,
+  const float & above_thresh)
+{
+  if (aboveTouching(bbox1, bbox2, min_iou, above_thresh)) {
+    return "aboveTouching";
+  } else if (higherThan(bbox1, bbox2, above_thresh) && verticallyAligned(bbox1, bbox2, min_iou)) {
+    return "above";
+  } else if (intersect(bbox1, bbox2)) {
+    return "intersect";
+  } else if (isInside(bbox1, bbox2)) {
+    return "inside";
+  } else {
+    return "disjoint";
+  }
+}
+
+void SemanticMapHandler::processRelationships()
+{
+  if (areas_bbox_.size() == 0){
+    return;
+  }
+  std::cout<<"Computing relationships\n";
+  for (auto bboxes_it = areas_bbox_.begin(); bboxes_it != std::prev(areas_bbox_.end()); bboxes_it++) {
+    std::cout<<"Computing bbox\n";
+    for (auto n_it = std::next(bboxes_it); n_it != areas_bbox_.end(); n_it++) {
+      std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
+      std::cout << "Region " << bboxes_it->first << " " << relationship << " Region " << n_it->first << std::endl;
+    }
+  }
 }
 
 void SemanticMapHandler::clear()
