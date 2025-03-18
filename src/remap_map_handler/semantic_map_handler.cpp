@@ -743,8 +743,8 @@ void SemanticMapHandler::processRelationships(
       region_1_entities += "]";
       region_2_entities += "]";
       std::cout << "Region " << region_1_entities << " " << relationship << " Region " << region_2_entities << std::endl;
-      std::cout<<"Region 1: "<<bboxes_it->second<<std::endl;
-      std::cout<<"Region 2: "<<n_it->second<<std::endl;
+      std::cout << "Region 1: " << bboxes_it->second << std::endl;
+      std::cout << "Region 2: " << n_it->second << std::endl;
     }
   }
 }
