@@ -68,7 +68,6 @@ private:
   openvdb::math::Transform::Ptr initial_transformation_;
 
   std::string fixed_frame_;
-  std::string map_frame_;  // If these two are the same, then no rotation applied to the map
 
   using GridAccessorType = typename openvdb::Int32Grid::Accessor;
 
