@@ -21,8 +21,8 @@ namespace map_handler
 SemanticMapHandler::SemanticMapHandler(
   const bool & threaded,
   const float & voxel_size,
-  const std::string & fixed_frame,
-  const bool & vertex_centered)
+  const bool & vertex_centered,
+  const std::string & fixed_frame)
 : threaded_(threaded),
   voxel_size_(voxel_size),
   vertex_centered_(vertex_centered),
@@ -46,8 +46,8 @@ SemanticMapHandler::SemanticMapHandler(
   std::shared_ptr<openvdb::Int32Grid> grid,
   const bool & threaded,
   const float & voxel_size,
-  const std::string & fixed_frame,
-  const bool & vertex_centered)
+  const bool & vertex_centered,
+  const std::string & fixed_frame)
 : grid_(grid),
   threaded_(threaded),
   voxel_size_(voxel_size),

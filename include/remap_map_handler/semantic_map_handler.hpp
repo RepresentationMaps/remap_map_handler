@@ -188,15 +188,15 @@ public:
   SemanticMapHandler(
     const bool & threaded,
     const float & voxel_size,
-    const std::string & fixed_frame = "map",
-    const bool & vertex_centered = true);
+    const bool & vertex_centered = true,
+    const std::string & fixed_frame = "map");
 
   SemanticMapHandler(
     std::shared_ptr<openvdb::Int32Grid> grid,
     const bool & threaded,
     const float & voxel_size,
-    const std::string & fixed_frame = "map",
-    const bool & vertex_centered = true);
+    const bool & vertex_centered = true,
+    const std::string & fixed_frame = "map");
 
   virtual ~SemanticMapHandler();
 
