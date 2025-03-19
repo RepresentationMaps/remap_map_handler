@@ -188,12 +188,14 @@ public:
   SemanticMapHandler(
     const bool & threaded,
     const float & voxel_size,
+    const std::string & fixed_frame = "map",
     const bool & vertex_centered = true);
 
   SemanticMapHandler(
     std::shared_ptr<openvdb::Int32Grid> grid,
     const bool & threaded,
     const float & voxel_size,
+    const std::string & fixed_frame = "map",
     const bool & vertex_centered = true);
 
   virtual ~SemanticMapHandler();
@@ -248,12 +250,10 @@ public:
   void clear();
 
   void processRelationships(const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register);
+  std::map<int, std::map<int, std::string>> getRelationshipsMatrix() const;
 
-  void setFixedFrame(const std::string fixed_frame);  // TODO(lorenzoferrini) implement
+  void setFixedFrame(const std::string & fixed_frame);
   std::string getFixedFrame() const;
-  void setMapFrame(const std::string map_frame);  // TODO(lorenzoferrini) implement
-  void rotateMap();  // TODO(lorenzoferrini) implement
-  void flushFoV();  // TODO(lorenzoferrini) implement
 
   std::shared_ptr<openvdb::Int32Grid> getGridPtr();
 };

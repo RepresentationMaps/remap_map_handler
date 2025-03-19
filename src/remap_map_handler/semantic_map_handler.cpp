@@ -21,11 +21,12 @@ namespace map_handler
 SemanticMapHandler::SemanticMapHandler(
   const bool & threaded,
   const float & voxel_size,
+  const std::string & fixed_frame,
   const bool & vertex_centered)
 : threaded_(threaded),
   voxel_size_(voxel_size),
   vertex_centered_(vertex_centered),
-  fixed_frame_("map")
+  fixed_frame_(fixed_frame)
 {
   grid_ = openvdb::Int32Grid::create();
 
@@ -45,12 +46,13 @@ SemanticMapHandler::SemanticMapHandler(
   std::shared_ptr<openvdb::Int32Grid> grid,
   const bool & threaded,
   const float & voxel_size,
+  const std::string & fixed_frame,
   const bool & vertex_centered)
 : grid_(grid),
   threaded_(threaded),
   voxel_size_(voxel_size),
   vertex_centered_(vertex_centered),
-  fixed_frame_("map")
+  fixed_frame_(fixed_frame)
 {
   if (vertex_centered) {
     offset_ = openvdb::math::Vec3d(0.0, 0.0, 0.0);
@@ -699,7 +701,7 @@ bool SemanticMapHandler::aboveTouching(
   const float & min_iou,
   const float & above_thresh)
 {
-  return higherThan(bbox1, bbox2, above_thresh) && verticallyAligned(bbox1, bbox2, above_thresh) && (intersect(bbox1, bbox2) || (bbox1.min()[2] == bbox2.max()[2]));
+  return higherThan(bbox1, bbox2, above_thresh) && verticallyAligned(bbox1, bbox2, min_iou) && (intersect(bbox1, bbox2) || (bbox1.min()[2] == bbox2.max()[2]));
 }
 
 std::string SemanticMapHandler::computeSymbolicRelationship(
@@ -749,6 +751,11 @@ void SemanticMapHandler::processRelationships(
   }
 }
 
+std::map<int, std::map<int, std::string>> SemanticMapHandler::getRelationshipsMatrix() const
+{
+  return relationships_matrix_;
+}
+
 void SemanticMapHandler::clear()
 {
   grid_.reset();
@@ -764,6 +771,11 @@ std::shared_ptr<openvdb::Int32Grid> SemanticMapHandler::getGridPtr()
 std::string SemanticMapHandler::getFixedFrame() const
 {
   return fixed_frame_;
+}
+
+void SemanticMapHandler::setFixedFrame(const std::string & fixed_frame)
+{
+  fixed_frame_ = fixed_frame;
 }
 
 }  // namespace map_handler
