@@ -248,7 +248,8 @@ public:
 
   void clear();
 
-  void processRelationships(const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register);
+  void processRelationships(
+    const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register);
   std::map<int, std::map<int, std::string>> getRelationshipsMatrix() const;
 
   void setFixedFrame(const std::string & fixed_frame);

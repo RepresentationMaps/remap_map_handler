@@ -591,30 +591,33 @@ bool SemanticMapHandler::removeRegion(
     return false;
   }
 
-  struct IdUpdater {
+  struct IdUpdater
+  {
     int reg_id_;
     std::map<int, int> ids_to_update_;
     std::map<int, openvdb::CoordBBox> & bbox_;
     SemanticMapHandler & map_handler_;
     IdUpdater(
-      const int & reg_id, 
+      const int & reg_id,
       const std::map<int, int> & ids_to_udpate,
       std::map<int, openvdb::CoordBBox> & bbox,
-      SemanticMapHandler & map_handler):
-    reg_id_(reg_id),
-    ids_to_update_(ids_to_udpate),
-    bbox_(bbox),
-    map_handler_(map_handler) {}
-    inline void operator()(const ValueIter& iter) const {
-      if (!iter.isVoxelValue())
+      SemanticMapHandler & map_handler)
+    : reg_id_(reg_id),
+      ids_to_update_(ids_to_udpate),
+      bbox_(bbox),
+      map_handler_(map_handler) {}
+    inline void operator()(const ValueIter & iter) const
+    {
+      if (!iter.isVoxelValue()) {
         return;
-      if (*iter == reg_id_){
+      }
+      if (*iter == reg_id_) {
         iter.setValueOff();
         bbox_.erase(*iter);
         return;
       }
       auto ids_it = ids_to_update_.find(*iter);
-      if (ids_it == ids_to_update_.end()){
+      if (ids_it == ids_to_update_.end()) {
         return;
       }
       bbox_.erase(*iter);
@@ -626,15 +629,16 @@ bool SemanticMapHandler::removeRegion(
 // of the tree associated with the grid,
 // it is not possible to have a multithreaded
 // foreach
-openvdb::tools::foreach(grid_->beginValueOn(),
-      IdUpdater(reg_id, ids_to_udpate, areas_bbox_, *this), false);
-return true;
+  openvdb::tools::foreach(
+    grid_->beginValueOn(),
+    IdUpdater(reg_id, ids_to_udpate, areas_bbox_, *this), false);
+  return true;
 }
 
 bool SemanticMapHandler::verticallyAligned(
-      const openvdb::CoordBBox & bbox1,
-      const openvdb::CoordBBox & bbox2,
-      const float & min_iou)
+  const openvdb::CoordBBox & bbox1,
+  const openvdb::CoordBBox & bbox2,
+  const float & min_iou)
 {
   // We check whether the XY projection of the bboxes
   // intersects. The general condition to understand if
@@ -650,13 +654,13 @@ bool SemanticMapHandler::verticallyAligned(
   auto y_c = std::max(bbox1.min()[1], bbox2.min()[1]);
   bool y_intersection = y_b > y_c;
 
-  auto bbox1_area = (bbox1.max()[0]-bbox1.min()[0])*(bbox1.max()[1]-bbox1.min()[1]);
-  auto bbox2_area = (bbox2.max()[0]-bbox2.min()[0])*(bbox2.max()[1]-bbox2.min()[1]);
+  auto bbox1_area = (bbox1.max()[0] - bbox1.min()[0]) * (bbox1.max()[1] - bbox1.min()[1]);
+  auto bbox2_area = (bbox2.max()[0] - bbox2.min()[0]) * (bbox2.max()[1] - bbox2.min()[1]);
 
-  float intersection_area = (x_b-x_c)*(y_b-y_c);
-  float union_area = bbox1_area+bbox2_area-intersection_area;
+  float intersection_area = (x_b - x_c) * (y_b - y_c);
+  float union_area = bbox1_area + bbox2_area - intersection_area;
 
-  float iou = intersection_area/union_area;
+  float iou = intersection_area / union_area;
 
   return x_intersection && y_intersection && (iou > min_iou);
 }
@@ -682,17 +686,15 @@ bool SemanticMapHandler::higherThan(
   const float & above_thresh)
 {
   // We are computing whether bbox1 is above bbox2
-  if ((bbox1.max()[2] > bbox2.max()[2]) && (bbox1.min()[2] > bbox2.max()[2]))
-  {
+  if ((bbox1.max()[2] > bbox2.max()[2]) && (bbox1.min()[2] > bbox2.max()[2])) {
     return true;
   }
-  if ((bbox1.max()[2] < bbox2.max()[2]) || (bbox1.min()[2] < bbox2.min()[2]))
-  {
+  if ((bbox1.max()[2] < bbox2.max()[2]) || (bbox1.min()[2] < bbox2.min()[2])) {
     return false;
   }
   float intersection_length = bbox2.max()[2] - bbox1.min()[2] + 1;
   float bbox1_z_length = bbox1.max()[2] - bbox1.min()[2] + 1;
-  return (intersection_length/bbox1_z_length) > above_thresh;
+  return (intersection_length / bbox1_z_length) > above_thresh;
 }
 
 bool SemanticMapHandler::aboveTouching(
@@ -701,7 +703,12 @@ bool SemanticMapHandler::aboveTouching(
   const float & min_iou,
   const float & above_thresh)
 {
-  return higherThan(bbox1, bbox2, above_thresh) && verticallyAligned(bbox1, bbox2, min_iou) && (intersect(bbox1, bbox2) || (bbox1.min()[2] == bbox2.max()[2]));
+  return higherThan(
+    bbox1, bbox2,
+    above_thresh) &&
+         verticallyAligned(
+    bbox1, bbox2,
+    min_iou) && (intersect(bbox1, bbox2) || (bbox1.min()[2] == bbox2.max()[2]));
 }
 
 std::string SemanticMapHandler::computeSymbolicRelationship(
@@ -726,25 +733,28 @@ std::string SemanticMapHandler::computeSymbolicRelationship(
 void SemanticMapHandler::processRelationships(
   const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register)
 {
-  if (areas_bbox_.size() == 0){
+  if (areas_bbox_.size() == 0) {
     return;
   }
-  std::cout<<"Computing relationships\n";
-  for (auto bboxes_it = areas_bbox_.begin(); bboxes_it != std::prev(areas_bbox_.end()); bboxes_it++) {
-    std::cout<<"Computing bbox\n";
+  std::cout << "Computing relationships\n";
+  for (auto bboxes_it = areas_bbox_.begin(); bboxes_it != std::prev(areas_bbox_.end());
+    bboxes_it++)
+  {
+    std::cout << "Computing bbox\n";
     for (auto n_it = std::next(bboxes_it); n_it != areas_bbox_.end(); n_it++) {
       std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
       std::string region_1_entities = "[";
       std::string region_2_entities = "[";
-      for (auto reg : reg_register->findRegionsById(bboxes_it->first)){
+      for (auto reg : reg_register->findRegionsById(bboxes_it->first)) {
         region_1_entities += reg + " ";
       }
-      for (auto reg : reg_register->findRegionsById(n_it->first)){
+      for (auto reg : reg_register->findRegionsById(n_it->first)) {
         region_2_entities += reg + " ";
       }
       region_1_entities += "]";
       region_2_entities += "]";
-      std::cout << "Region " << region_1_entities << " " << relationship << " Region " << region_2_entities << std::endl;
+      std::cout << "Region " << region_1_entities << " " << relationship << " Region " <<
+        region_2_entities << std::endl;
       std::cout << "Region 1: " << bboxes_it->second << std::endl;
       std::cout << "Region 2: " << n_it->second << std::endl;
     }
