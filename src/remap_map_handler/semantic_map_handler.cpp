@@ -731,33 +731,37 @@ std::string SemanticMapHandler::computeSymbolicRelationship(
 }
 
 void SemanticMapHandler::processRelationships(
-  const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register)
+  const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register,
+  const bool & textual_debugging)
 {
   if (areas_bbox_.size() == 0) {
     return;
   }
-  std::cout << "Computing relationships\n";
   for (auto bboxes_it = areas_bbox_.begin(); bboxes_it != std::prev(areas_bbox_.end());
     bboxes_it++)
   {
-    std::cout << "Computing bbox\n";
+    std::map<int, std::string> relationships_matrix_row;
     for (auto n_it = std::next(bboxes_it); n_it != areas_bbox_.end(); n_it++) {
       std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
-      std::string region_1_entities = "[";
-      std::string region_2_entities = "[";
-      for (auto reg : reg_register->findRegionsById(bboxes_it->first)) {
-        region_1_entities += reg + " ";
+      relationships_matrix_row[n_it->first] = relationship; 
+      if (textual_debugging) {
+        std::string region_1_entities = "[";
+        std::string region_2_entities = "[";
+        for (auto reg : reg_register->findRegionsById(bboxes_it->first)) {
+          region_1_entities += reg + " ";
+        }
+        for (auto reg : reg_register->findRegionsById(n_it->first)) {
+          region_2_entities += reg + " ";
+        }
+        region_1_entities += "]";
+        region_2_entities += "]";
+        std::cout << "Region " << region_1_entities << " " << relationship << " Region " <<
+          region_2_entities << std::endl;
+        std::cout << "Region 1: " << bboxes_it->second << std::endl;
+        std::cout << "Region 2: " << n_it->second << std::endl;
       }
-      for (auto reg : reg_register->findRegionsById(n_it->first)) {
-        region_2_entities += reg + " ";
-      }
-      region_1_entities += "]";
-      region_2_entities += "]";
-      std::cout << "Region " << region_1_entities << " " << relationship << " Region " <<
-        region_2_entities << std::endl;
-      std::cout << "Region 1: " << bboxes_it->second << std::endl;
-      std::cout << "Region 2: " << n_it->second << std::endl;
     }
+    relationships_matrix_[bboxes_it->first] = relationships_matrix_row;
   }
 }
 
