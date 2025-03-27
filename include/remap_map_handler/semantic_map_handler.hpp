@@ -256,6 +256,11 @@ public:
   void setFixedFrame(const std::string & fixed_frame);
   std::string getFixedFrame() const;
 
+  void getEntity(
+    const std::string & reg,
+    remap::regions_register::RegionsRegister & reg_register,
+    pcl::PointCloud<pcl::PointXYZ> & points);
+
   std::shared_ptr<openvdb::Int32Grid> getGridPtr();
 };
 }  // namespace map_handler

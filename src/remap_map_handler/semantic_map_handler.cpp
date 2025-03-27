@@ -792,5 +792,51 @@ void SemanticMapHandler::setFixedFrame(const std::string & fixed_frame)
   fixed_frame_ = fixed_frame;
 }
 
+void SemanticMapHandler::getEntity(
+  const std::string & reg,
+  remap::regions_register::RegionsRegister & reg_register,
+  pcl::PointCloud<pcl::PointXYZ> & points)
+{
+  using ValueIter = typename openvdb::Int32Grid::ValueOnIter;
+
+  // First we find the IDs associated with the regions containing
+  // the semantic entity reg
+  auto reg_ids = reg_register.getEntityIds(reg);
+
+  if (reg_ids.size() == 0) {
+    return;
+  }
+
+  struct EntityGetter
+  {
+    std::vector<int> reg_ids_;
+    pcl::PointCloud<pcl::PointXYZ> & points_;
+    SemanticMapHandler & map_handler_;
+    EntityGetter(
+      const std::vector<int> & reg_ids,
+      pcl::PointCloud<pcl::PointXYZ> & points,
+      SemanticMapHandler & map_handler)
+    : reg_ids_(reg_ids),
+      points_(points),
+      map_handler_(map_handler) {}
+    inline void operator()(const ValueIter & iter) const
+    {
+      if (!iter.isVoxelValue()) {
+        return;
+      }
+      if (std::find(reg_ids_.begin(), reg_ids_.end(), *iter) != reg_ids_.end()) {
+        openvdb::Vec3d point = map_handler_.grid_->indexToWorld(iter.getCoord());
+        pcl::PointXYZ pcl_point;
+        pcl_point.x = point[0];
+        pcl_point.y = point[1];
+        pcl_point.z = point[2];
+        points_.push_back(pcl_point);
+      }
+    }
+  };
+
+  openvdb::tools::foreach(grid_->beginValueOn(), EntityGetter(reg_ids, points, *this), false);
+}
+
 }  // namespace map_handler
 }  // namespace remap
