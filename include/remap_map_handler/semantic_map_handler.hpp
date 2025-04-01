@@ -58,7 +58,9 @@ class SemanticMapHandler
 private:
   std::shared_ptr<openvdb::Int32Grid> grid_;
   std::map<int, openvdb::CoordBBox> areas_bbox_;
-  std::map<int, std::map<int, std::string>> relationships_matrix_;
+  std::map<std::string, openvdb::CoordBBox> entities_bbox_;
+  std::map<int, std::map<int, std::string>> regions_relationship_matrix_;
+  std::map<std::string, std::map<std::string, std::string>> entities_relationship_matrix_;
 
   bool threaded_;
 
@@ -81,6 +83,10 @@ private:
 
   void updateAreaBBox(
     const int & regId,
+    const openvdb::Coord & ijk);
+
+  void updateEntityBBox(
+    const std::string & entity_id,
     const openvdb::Coord & ijk);
 
   void deleteRegionBBox(
@@ -233,7 +239,8 @@ public:
     const openvdb::Vec3d & direction,
     const std::string & reg,
     remap::regions_register::RegionsRegister & reg_register,
-    const openvdb::Vec3d & origin = openvdb::Vec3d(0.0, 0.0, 0.0));
+    const openvdb::Vec3d & origin = openvdb::Vec3d(0.0, 0.0, 0.0),
+    const float & starting_point = 0.0);
 
   void insertVoxel(
     const float & x,
@@ -250,8 +257,13 @@ public:
 
   void processRelationships(
     const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register,
+    const bool & entities_relationship = true,
+    const bool & regions_relationship = false,
     const bool & textual_debugging = false);
-  std::map<int, std::map<int, std::string>> getRelationshipsMatrix() const;
+
+  std::map<int, std::map<int, std::string>> getRegionsRelationshipMatrix() const;
+
+  std::map<std::string, std::map<std::string, std::string>> getEntitiesRelationshipMatrix() const;
 
   void setFixedFrame(const std::string & fixed_frame);
   std::string getFixedFrame() const;
@@ -259,7 +271,7 @@ public:
   void getEntity(
     const std::string & reg,
     remap::regions_register::RegionsRegister & reg_register,
-    pcl::PointCloud<pcl::PointXYZ> & points);
+    pcl::PointCloud<pcl::PointXYZI> & points);
 
   std::shared_ptr<openvdb::Int32Grid> getGridPtr();
 };

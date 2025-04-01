@@ -81,6 +81,17 @@ void SemanticMapHandler::updateAreaBBox(
   }
 }
 
+void SemanticMapHandler::updateEntityBBox(
+  const std::string & entity_id,
+  const openvdb::Coord & ijk)
+{
+  if (entities_bbox_.find(entity_id) == entities_bbox_.end()) {
+    entities_bbox_[entity_id] = openvdb::CoordBBox(ijk, ijk);
+  } else {
+    entities_bbox_[entity_id].expand(ijk);
+  }
+}
+
 void SemanticMapHandler::deleteRegionBBox(const int & regId)
 {
   if (areas_bbox_.find(regId) != areas_bbox_.end()) {
@@ -138,6 +149,7 @@ void SemanticMapHandler::setVoxelId(
   }
   accessor.setValue(ijk, id);
   updateAreaBBox(id, ijk);
+  updateEntityBBox(reg, ijk);
 }
 
 void SemanticMapHandler::boxSemanticCore(
@@ -503,15 +515,17 @@ void SemanticMapHandler::insertSemanticPyramid(
   const openvdb::Vec3d & direction,
   const std::string & reg,
   remap::regions_register::RegionsRegister & reg_register,
-  const openvdb::Vec3d & origin)
+  const openvdb::Vec3d & origin,
+  const float & starting_point)
 {
   if (length <= 0.0) {
     std::cerr <<
-      "[AddPyramid]: The pyramid length cannot be less than or equal to zero! Aborting!" <<
+      "The pyramid length cannot be less than or equal to zero! Aborting!" <<
       std::endl;
   } else {
     float theta_h = amplitude_h / 2.0;
     float theta_v = amplitude_v / 2.0;
+    int i_begin = std::ceil(length / voxel_size_ * starting_point);
     int i_end = std::ceil(length / voxel_size_);
 
     openvdb::Vec3d idx_space_origin = grid_->worldToIndex(origin);
@@ -523,7 +537,7 @@ void SemanticMapHandler::insertSemanticPyramid(
     openvdb::math::Quatd rotation_quat(rotation_axis, rotation_angle);
 
     tbb::enumerable_thread_specific<openvdb::Int32Tree> tbb_thread_pool(grid_->tree());
-    tbb::blocked_range<int> tbb_iteration_range(0, i_end, sizeof(i_end));
+    tbb::blocked_range<int> tbb_iteration_range(i_begin, i_end, sizeof(i_end));
 
     auto kernel = [&](const tbb::blocked_range<int> & iteration_range)
       {
@@ -625,13 +639,17 @@ bool SemanticMapHandler::removeRegion(
       map_handler_.updateAreaBBox(ids_it->second, iter.getCoord());
     }
   };
-// As we are directly modifying the topology
-// of the tree associated with the grid,
-// it is not possible to have a multithreaded
-// foreach
+  // As we are directly modifying the topology
+  // of the tree associated with the grid,
+  // it is not possible to have a multithreaded
+  // foreach
   openvdb::tools::foreach(
     grid_->beginValueOn(),
     IdUpdater(reg_id, ids_to_udpate, areas_bbox_, *this), false);
+
+  if (entities_bbox_.find(reg) != entities_bbox_.end()) {
+    entities_bbox_.erase(reg);
+  }
   return true;
 }
 
@@ -732,42 +750,66 @@ std::string SemanticMapHandler::computeSymbolicRelationship(
 
 void SemanticMapHandler::processRelationships(
   const std::shared_ptr<remap::regions_register::RegionsRegister> reg_register,
+  const bool & entities_relationship,
+  const bool & regions_relationship,
   const bool & textual_debugging)
 {
   if (areas_bbox_.size() == 0) {
     return;
   }
-  for (auto bboxes_it = areas_bbox_.begin(); bboxes_it != std::prev(areas_bbox_.end());
-    bboxes_it++)
-  {
-    std::map<int, std::string> relationships_matrix_row;
-    for (auto n_it = std::next(bboxes_it); n_it != areas_bbox_.end(); n_it++) {
-      std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
-      relationships_matrix_row[n_it->first] = relationship; 
-      if (textual_debugging) {
-        std::string region_1_entities = "[";
-        std::string region_2_entities = "[";
-        for (auto reg : reg_register->findRegionsById(bboxes_it->first)) {
-          region_1_entities += reg + " ";
+  if (entities_relationship) {
+    for (auto bboxes_it = entities_bbox_.begin(); bboxes_it != std::prev(entities_bbox_.end());
+      bboxes_it++)
+    {
+      std::map<std::string, std::string> entities_relationship_matrix_row;
+      for (auto n_it = std::next(bboxes_it); n_it != entities_bbox_.end(); n_it++) {
+        std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
+        entities_relationship_matrix_row[n_it->first] = relationship; 
+        if (textual_debugging) {
+          std::cout << bboxes_it->first << " " << relationship << " " << n_it->first << std::endl;
         }
-        for (auto reg : reg_register->findRegionsById(n_it->first)) {
-          region_2_entities += reg + " ";
-        }
-        region_1_entities += "]";
-        region_2_entities += "]";
-        std::cout << "Region " << region_1_entities << " " << relationship << " Region " <<
-          region_2_entities << std::endl;
-        std::cout << "Region 1: " << bboxes_it->second << std::endl;
-        std::cout << "Region 2: " << n_it->second << std::endl;
       }
+      entities_relationship_matrix_[bboxes_it->first] = entities_relationship_matrix_row;
     }
-    relationships_matrix_[bboxes_it->first] = relationships_matrix_row;
+  }
+  if (regions_relationship){
+    for (auto bboxes_it = areas_bbox_.begin(); bboxes_it != std::prev(areas_bbox_.end());
+      bboxes_it++)
+    {
+      std::map<int, std::string> regions_relationship_matrix_row;
+      for (auto n_it = std::next(bboxes_it); n_it != areas_bbox_.end(); n_it++) {
+        std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
+        regions_relationship_matrix_row[n_it->first] = relationship; 
+        if (textual_debugging) {
+          std::string region_1_entities = "[";
+          std::string region_2_entities = "[";
+          for (auto reg : reg_register->findRegionsById(bboxes_it->first)) {
+            region_1_entities += reg + " ";
+          }
+          for (auto reg : reg_register->findRegionsById(n_it->first)) {
+            region_2_entities += reg + " ";
+          }
+          region_1_entities += "]";
+          region_2_entities += "]";
+          std::cout << "Region " << region_1_entities << " " << relationship << " Region " <<
+            region_2_entities << std::endl;
+          std::cout << "Region 1: " << bboxes_it->second << std::endl;
+          std::cout << "Region 2: " << n_it->second << std::endl;
+        }
+      }
+      regions_relationship_matrix_[bboxes_it->first] = regions_relationship_matrix_row;
+    }
   }
 }
 
-std::map<int, std::map<int, std::string>> SemanticMapHandler::getRelationshipsMatrix() const
+std::map<int, std::map<int, std::string>> SemanticMapHandler::getRegionsRelationshipMatrix() const
 {
-  return relationships_matrix_;
+  return regions_relationship_matrix_;
+}
+
+std::map<std::string, std::map<std::string, std::string>> SemanticMapHandler::getEntitiesRelationshipMatrix() const
+{
+  return entities_relationship_matrix_;
 }
 
 void SemanticMapHandler::clear()
@@ -795,7 +837,7 @@ void SemanticMapHandler::setFixedFrame(const std::string & fixed_frame)
 void SemanticMapHandler::getEntity(
   const std::string & reg,
   remap::regions_register::RegionsRegister & reg_register,
-  pcl::PointCloud<pcl::PointXYZ> & points)
+  pcl::PointCloud<pcl::PointXYZI> & points)
 {
   using ValueIter = typename openvdb::Int32Grid::ValueOnIter;
 
@@ -810,11 +852,11 @@ void SemanticMapHandler::getEntity(
   struct EntityGetter
   {
     std::vector<int> reg_ids_;
-    pcl::PointCloud<pcl::PointXYZ> & points_;
+    pcl::PointCloud<pcl::PointXYZI> & points_;
     SemanticMapHandler & map_handler_;
     EntityGetter(
       const std::vector<int> & reg_ids,
-      pcl::PointCloud<pcl::PointXYZ> & points,
+      pcl::PointCloud<pcl::PointXYZI> & points,
       SemanticMapHandler & map_handler)
     : reg_ids_(reg_ids),
       points_(points),
@@ -826,10 +868,11 @@ void SemanticMapHandler::getEntity(
       }
       if (std::find(reg_ids_.begin(), reg_ids_.end(), *iter) != reg_ids_.end()) {
         openvdb::Vec3d point = map_handler_.grid_->indexToWorld(iter.getCoord());
-        pcl::PointXYZ pcl_point;
+        pcl::PointXYZI pcl_point;
         pcl_point.x = point[0];
         pcl_point.y = point[1];
         pcl_point.z = point[2];
+        pcl_point.intensity = *iter;
         points_.push_back(pcl_point);
       }
     }
