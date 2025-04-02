@@ -739,7 +739,7 @@ std::string SemanticMapHandler::computeSymbolicRelationship(
     return "aboveTouching";
   } else if (higherThan(bbox1, bbox2, above_thresh) && verticallyAligned(bbox1, bbox2, min_iou)) {
     return "above";
-  } else if (isInside(bbox1, bbox2)) {
+  } else if (isInside(bbox2, bbox1)) {
     return "inside";
   } else if (intersect(bbox1, bbox2)) {
     return "intersect";
@@ -758,11 +758,14 @@ void SemanticMapHandler::processRelationships(
     return;
   }
   if (entities_relationship) {
-    for (auto bboxes_it = entities_bbox_.begin(); bboxes_it != std::prev(entities_bbox_.end());
+    for (auto bboxes_it = entities_bbox_.begin(); bboxes_it != entities_bbox_.end();
       bboxes_it++)
     {
       std::map<std::string, std::string> entities_relationship_matrix_row;
-      for (auto n_it = std::next(bboxes_it); n_it != entities_bbox_.end(); n_it++) {
+      for (auto n_it = entities_bbox_.begin(); n_it != entities_bbox_.end(); n_it++) {
+        if (bboxes_it == n_it) {
+          continue;
+        }
         std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
         entities_relationship_matrix_row[n_it->first] = relationship; 
         if (textual_debugging) {
