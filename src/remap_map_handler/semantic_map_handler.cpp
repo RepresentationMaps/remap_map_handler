@@ -767,7 +767,7 @@ void SemanticMapHandler::processRelationships(
           continue;
         }
         std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
-        entities_relationship_matrix_row[n_it->first] = relationship; 
+        entities_relationship_matrix_row[n_it->first] = relationship;
         if (textual_debugging) {
           std::cout << bboxes_it->first << " " << relationship << " " << n_it->first << std::endl;
         }
@@ -775,14 +775,14 @@ void SemanticMapHandler::processRelationships(
       entities_relationship_matrix_[bboxes_it->first] = entities_relationship_matrix_row;
     }
   }
-  if (regions_relationship){
+  if (regions_relationship) {
     for (auto bboxes_it = areas_bbox_.begin(); bboxes_it != std::prev(areas_bbox_.end());
       bboxes_it++)
     {
       std::map<int, std::string> regions_relationship_matrix_row;
       for (auto n_it = std::next(bboxes_it); n_it != areas_bbox_.end(); n_it++) {
         std::string relationship = computeSymbolicRelationship(bboxes_it->second, n_it->second);
-        regions_relationship_matrix_row[n_it->first] = relationship; 
+        regions_relationship_matrix_row[n_it->first] = relationship;
         if (textual_debugging) {
           std::string region_1_entities = "[";
           std::string region_2_entities = "[";
@@ -810,7 +810,8 @@ std::map<int, std::map<int, std::string>> SemanticMapHandler::getRegionsRelation
   return regions_relationship_matrix_;
 }
 
-std::map<std::string, std::map<std::string, std::string>> SemanticMapHandler::getEntitiesRelationshipMatrix() const
+std::map<std::string,
+  std::map<std::string, std::string>> SemanticMapHandler::getEntitiesRelationshipMatrix() const
 {
   return entities_relationship_matrix_;
 }
