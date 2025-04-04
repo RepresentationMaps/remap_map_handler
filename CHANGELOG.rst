@@ -2,8 +2,8 @@
 Changelog for package remap_map_handler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.0 (2025-04-04)
+------------------
 * README first version
 * making linters happy
 * polishing spatial relationships
