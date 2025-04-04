@@ -2,6 +2,24 @@
 Changelog for package remap_map_handler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* README first version
+* making linters happy
+* polishing spatial relationships
+* retrieving XYZI pointclouds rather than XYZ
+* added function to get specific entity voxels
+* improved process_relationships
+* making linters happy
+* removed unused variable
+* changed parameter order to avoid breaking existing code
+* added non defined functions
+* improved debuggin printing
+* fixed some spatial relationships bugs
+* added spatial relationships functions
+* added function for single voxel activation
+* Contributors: Lorenzo Ferrini
+
 0.1.0 (2025-02-21)
 ------------------
 * add basic README
