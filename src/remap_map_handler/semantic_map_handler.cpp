@@ -543,9 +543,9 @@ void SemanticMapHandler::insertSemanticPyramid(
     auto s_pitch = std::sin(pitch);
     auto c_yaw = std::cos(yaw);
     auto s_yaw = std::sin(yaw);
-    openvdb::math::Mat3d rot_matrix(c_pitch*c_yaw, -c_pitch*s_yaw, s_pitch,
-                                    s_yaw, c_yaw, 0.0,
-                                    -s_pitch*c_yaw, s_pitch*s_yaw, c_pitch);
+    openvdb::math::Mat3d rot_matrix(c_pitch * c_yaw, -c_pitch * s_yaw, s_pitch,
+      s_yaw, c_yaw, 0.0,
+      -s_pitch * c_yaw, s_pitch * s_yaw, c_pitch);
     openvdb::math::Quatd rotation_quat(rot_matrix);
     rotation_quat.normalize();
 
