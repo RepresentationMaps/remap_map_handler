@@ -2,6 +2,12 @@
 Changelog for package remap_map_handler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* paying the linters tax
+* fixed pyramid rotation
+* Contributors: lorenzoferrini
+
 0.2.0 (2025-04-04)
 ------------------
 * README first version
