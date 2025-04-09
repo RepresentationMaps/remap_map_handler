@@ -531,10 +531,23 @@ void SemanticMapHandler::insertSemanticPyramid(
     openvdb::Vec3d idx_space_origin = grid_->worldToIndex(origin);
 
     openvdb::Vec3d unit_vector_x(1.0, 0.0, 0.0);
-    openvdb::Vec3d rotation_axis = unit_vector_x.cross(direction);
-    double rotation_angle = std::atan2(rotation_axis.length(), unit_vector_x.dot(direction));
-    rotation_axis.normalize();
-    openvdb::math::Quatd rotation_quat(rotation_axis, rotation_angle);
+
+    // compute the pitch and yaw angles to take unit_vector_x to direction
+    auto axis = direction;
+    axis.normalize();
+
+    double yaw = -std::atan2(axis[1], axis[0]);
+    double pitch = std::asin(axis[2]);
+
+    auto c_pitch = std::cos(pitch);
+    auto s_pitch = std::sin(pitch);
+    auto c_yaw = std::cos(yaw);
+    auto s_yaw = std::sin(yaw);
+    openvdb::math::Mat3d rot_matrix(c_pitch*c_yaw, -c_pitch*s_yaw, s_pitch,
+                                    s_yaw, c_yaw, 0.0,
+                                    -s_pitch*c_yaw, s_pitch*s_yaw, c_pitch);
+    openvdb::math::Quatd rotation_quat(rot_matrix);
+    rotation_quat.normalize();
 
     tbb::enumerable_thread_specific<openvdb::Int32Tree> tbb_thread_pool(grid_->tree());
     tbb::blocked_range<int> tbb_iteration_range(i_begin, i_end, sizeof(i_end));
