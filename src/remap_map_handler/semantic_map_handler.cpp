@@ -846,6 +846,12 @@ std::string SemanticMapHandler::getFixedFrame() const
   return fixed_frame_;
 }
 
+float SemanticMapHandler::getVoxelSize() const
+{
+  return voxel_size_;
+}
+
+
 void SemanticMapHandler::setFixedFrame(const std::string & fixed_frame)
 {
   fixed_frame_ = fixed_frame;

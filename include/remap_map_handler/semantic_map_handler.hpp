@@ -16,6 +16,7 @@
 #define REMAP_MAP_HANDLER__SEMANTIC_MAP_HANDLER_HPP_
 
 #include <openvdb/openvdb.h>
+#include <openvdb/math/Transform.h>
 #include <openvdb/tree/ValueAccessor.h>
 #include <openvdb/tools/ValueTransformer.h>
 #include <openvdb/tools/Statistics.h>
@@ -267,6 +268,8 @@ public:
 
   void setFixedFrame(const std::string & fixed_frame);
   std::string getFixedFrame() const;
+
+  float getVoxelSize() const;
 
   void getEntity(
     const std::string & reg,
