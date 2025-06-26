@@ -2,8 +2,8 @@
 Changelog for package remap_map_handler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.4.0 (2025-06-26)
+------------------
 * introduced getVoxelSize
 * Contributors: Lorenzo Ferrini
 
