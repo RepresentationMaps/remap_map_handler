@@ -2,6 +2,11 @@
 Changelog for package remap_map_handler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* introduced getVoxelSize
+* Contributors: Lorenzo Ferrini
+
 0.3.0 (2025-04-09)
 ------------------
 * paying the linters tax
